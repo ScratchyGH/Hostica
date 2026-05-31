@@ -1,0 +1,37 @@
+'use strict';
+const Licenses=(()=>{
+const LIST=[
+{id:'allrights',name:'All Rights Reserved',tag:'ARR',canCopy:false,canModify:false,canDistribute:false,canCommercial:false,requiresCredit:false,isOSI:false,desc:'No permissions granted. Full copyright retained. Viewers may not copy, use, or distribute any part of the code.',short:'Copyright {year} {author}. All rights reserved. No part of this code may be copied, modified, or distributed without explicit written permission from the author.',color:'#e05252'},
+{id:'hostica-source',name:'Hostica Source License',tag:'HSL',canCopy:false,canModify:false,canDistribute:false,canCommercial:false,requiresCredit:true,isOSI:false,desc:'View-only. You may read the source code for learning purposes only. No copying, forking, redistribution, or use in other projects permitted.',short:'Copyright {year} {author}. Hostica Source License. View-only. No copying, forking, redistribution or use in any project is permitted.',color:'#e77c3e'},
+{id:'no-commercial',name:'No Commercial Use',tag:'NCU',canCopy:true,canModify:true,canDistribute:true,canCommercial:false,requiresCredit:true,isOSI:false,desc:'Free for personal and open source use. Commercial use strictly prohibited. Attribution required.',short:'Copyright {year} {author}. Free for non-commercial use only. Attribution required. Commercial use prohibited.',color:'#fbbf24'},
+{id:'mit',name:'MIT License',tag:'MIT',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Permissive. Do anything with it as long as you include the original copyright notice.',short:'MIT License. Copyright {year} {author}. Permission is hereby granted, free of charge, to any person obtaining a copy of this software to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies.',color:'#4ade80'},
+{id:'apache2',name:'Apache 2.0',tag:'Apache',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Permissive with patent protection. Requires attribution and preservation of notices.',short:'Licensed under the Apache License, Version 2.0. Copyright {year} {author}.',color:'#60a5fa'},
+{id:'gpl3',name:'GPL v3',tag:'GPL-3',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Copyleft. Anyone using or distributing your code must also release their source under GPL v3.',short:'Copyright {year} {author}. Licensed under GPL v3. Source code must remain open under GPL v3 when distributed.',color:'#a78bfa'},
+{id:'lgpl3',name:'LGPL v3',tag:'LGPL-3',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Weaker copyleft. Libraries can be linked in proprietary software but modifications must stay LGPL.',short:'Copyright {year} {author}. Licensed under LGPL v3.',color:'#818cf8'},
+{id:'agpl3',name:'AGPL v3',tag:'AGPL-3',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Strongest copyleft. Even network use triggers the share-alike requirement.',short:'Copyright {year} {author}. Licensed under AGPL v3. Network use constitutes distribution.',color:'#c084fc'},
+{id:'bsd2',name:'BSD 2-Clause',tag:'BSD-2',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Permissive. Similar to MIT but slightly different attribution clause.',short:'Copyright {year} {author}. BSD 2-Clause License.',color:'#34d399'},
+{id:'bsd3',name:'BSD 3-Clause',tag:'BSD-3',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Permissive. Adds a non-endorsement clause on top of BSD 2.',short:'Copyright {year} {author}. BSD 3-Clause License.',color:'#2dd4bf'},
+{id:'isc',name:'ISC License',tag:'ISC',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'Functionally equivalent to MIT. Very short and clean.',short:'Copyright {year} {author}. ISC License.',color:'#86efac'},
+{id:'mpl2',name:'Mozilla Public License 2.0',tag:'MPL-2',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:true,desc:'File-level copyleft. Modified files must stay MPL but you can combine with proprietary code.',short:'Copyright {year} {author}. Mozilla Public License 2.0.',color:'#f97316'},
+{id:'cc0',name:'CC0 1.0 (Public Domain)',tag:'CC0',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:false,isOSI:false,desc:'Public domain dedication. No rights reserved. Anyone can do anything.',short:'CC0 1.0 Universal. {author} has waived all copyright. No rights reserved.',color:'#94a3b8'},
+{id:'unlicense',name:'The Unlicense',tag:'Unlicense',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:false,isOSI:true,desc:'Public domain equivalent. Do whatever you want with it.',short:'Unlicense. This is free and unencumbered software released into the public domain.',color:'#64748b'},
+{id:'wtfpl',name:'WTFPL',tag:'WTFPL',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:false,isOSI:false,desc:'Do What The F*** You Want To Public License. No restrictions at all.',short:'Copyright {year} {author}. Licensed under WTFPL. Do what you want.',color:'#f43f5e'},
+{id:'view-only',name:'View Only License',tag:'VOL',canCopy:false,canModify:false,canDistribute:false,canCommercial:false,requiresCredit:false,isOSI:false,desc:'Strictly view-only. No copying, modification, distribution, or use of any kind.',short:'Copyright {year} {author}. View Only License. No use of any kind is permitted.',color:'#dc2626'},
+{id:'cc-by',name:'CC BY 4.0',tag:'CC-BY',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:false,desc:'Creative Commons Attribution. Share and adapt for any purpose with credit.',short:'CC BY 4.0. Copyright {year} {author}. Attribution required.',color:'#38bdf8'},
+{id:'cc-by-nc',name:'CC BY-NC 4.0',tag:'CC-BY-NC',canCopy:true,canModify:true,canDistribute:true,canCommercial:false,requiresCredit:true,isOSI:false,desc:'Creative Commons Attribution Non-Commercial. No commercial use.',short:'CC BY-NC 4.0. Copyright {year} {author}. Non-commercial use only.',color:'#fb923c'},
+{id:'cc-by-sa',name:'CC BY-SA 4.0',tag:'CC-BY-SA',canCopy:true,canModify:true,canDistribute:true,canCommercial:true,requiresCredit:true,isOSI:false,desc:'Creative Commons Share-Alike. Derivatives must use the same license.',short:'CC BY-SA 4.0. Copyright {year} {author}. Share-alike required.',color:'#a3e635'},
+{id:'proprietary',name:'Proprietary',tag:'Proprietary',canCopy:false,canModify:false,canDistribute:false,canCommercial:false,requiresCredit:false,isOSI:false,desc:'Closed source proprietary software. All rights reserved by the owner.',short:'Copyright {year} {author}. Proprietary software. Unauthorized use prohibited.',color:'#6b7280'},
+];
+
+function getAll(){return LIST;}
+function getById(id){return LIST.find(l=>l.id===id)||null;}
+function getText(id,author,year){
+const l=getById(id);
+if(!l)return'';
+return l.short.replace('{author}',author||'Unknown').replace('{year}',year||new Date().getFullYear());
+}
+function getRestricted(){return LIST.filter(l=>!l.canCopy);}
+function getOpen(){return LIST.filter(l=>l.canCopy&&l.isOSI);}
+
+return{getAll,getById,getText,getRestricted,getOpen,LIST};
+})();
