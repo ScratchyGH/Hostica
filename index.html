@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.7/dist/dexie.min.js" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js" crossorigin="anonymous"></script> 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js" crossorigin="anonymous"></script>
@@ -90,9 +90,9 @@
 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 <span>Community</span>
 </button>
-<button class="nav-item" id="nav-community" onclick="window.location.href='community.html'">
-<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-<span>Community</span>
+<button class="nav-item" id="nav-profile" data-view="profile">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+<span>Profile</span>
 </button>
 <button class="nav-item" data-view="editor" id="nav-editor" style="display:none">
 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -143,6 +143,8 @@
 <button class="btn-icon-label" id="btn-undo" title="Undo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg></button>
 <button class="btn-icon-label" id="btn-redo" title="Redo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg></button>
 <button class="btn-secondary sm" id="btn-add-file"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>File</button>
+<button class="btn-secondary sm" id="btn-import-files"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Import</button>
+<input type="file" id="import-files-input" style="display:none" multiple/>
 <button class="btn-secondary sm" id="btn-run" title="Run file (Python/SQL/Lua)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run</button>
 <button class="btn-secondary sm" id="btn-preview"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
 <button class="btn-secondary sm" id="btn-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play</button>
@@ -164,6 +166,37 @@
 </div>
 </div>
 </section>
+
+<section id="view-profile" class="view" style="display:none">
+<div id="profile-banner" style="height:140px;background:linear-gradient(135deg,var(--bg-3),var(--bg-4));position:relative;flex-shrink:0"></div>
+<div style="padding:0 24px;position:relative">
+<div style="display:flex;align-items:flex-end;gap:16px;margin-top:-32px;margin-bottom:16px">
+<div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:var(--accent);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden"></div>
+<div style="padding-bottom:4px;flex:1;min-width:0">
+<div id="profile-displayname" style="font-size:18px;font-weight:700;color:var(--text)"></div>
+<div id="profile-username" style="font-size:13px;color:var(--text-3)"></div>
+</div>
+<button class="btn-secondary" id="btn-edit-profile" onclick="document.getElementById('btn-settings').click()">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+Edit profile
+</button>
+</div>
+<div id="profile-bio" style="font-size:13px;color:var(--text-2);margin-bottom:8px;line-height:1.5"></div>
+<div id="profile-website" style="margin-bottom:20px"></div>
+<div style="border-bottom:1px solid var(--border);display:flex;gap:0;margin-bottom:20px">
+<button class="repo-tab active" data-ptab="projects">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+Projects
+</button>
+</div>
+<div id="profile-projects" class="projects-grid" style="padding:0 0 24px"></div>
+<div id="profile-empty" class="empty-state" style="display:none">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+<p>No public projects yet.</p>
+</div>
+</div>
+</section>
+
 </main>
 
 <div id="terminal-panel" style="display:none;position:fixed;bottom:0;left:var(--sidebar-w);right:0;height:200px;background:#0d0d0c;border-top:1px solid var(--border);display:none;flex-direction:column;z-index:50">
@@ -214,8 +247,15 @@
 <div class="modal">
 <div class="modal-header"><h3>Settings</h3><button class="icon-btn modal-close" data-modal="modal-settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
 <div class="modal-body">
-<div class="settings-section"><h4>Account</h4>
+<div class="settings-section"><h4>Profile</h4>
 <div class="field"><label>Username</label><input type="text" id="settings-username" readonly/></div>
+<div class="field"><label>Display name</label><input type="text" id="settings-displayname" placeholder="Your name"/></div>
+<div class="field"><label>Bio</label><textarea id="settings-bio" placeholder="Tell people about yourself…" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--bg-3);color:var(--text);font-size:13px;resize:vertical;outline:none;font-family:var(--font)"></textarea></div>
+<div class="field"><label>Avatar URL</label><input type="text" id="settings-avatar" placeholder="https://example.com/avatar.png"/></div>
+<div class="field"><label>Banner URL</label><input type="text" id="settings-banner" placeholder="https://example.com/banner.png"/></div>
+<div class="field"><label>Website</label><input type="text" id="settings-website" placeholder="https://yoursite.com"/></div>
+</div>
+<div class="settings-section"><h4>Security</h4>
 <div class="field"><label>Two-factor auth</label><div class="toggle-row"><span id="2fa-status-label">Off</span><button class="btn-secondary sm" id="btn-toggle-2fa">Enable</button></div></div>
 </div>
 <div class="settings-section"><h4>Editor</h4>
