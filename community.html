@@ -5,7 +5,7 @@
 <title>Community — Hostica</title>
 <link rel="stylesheet" href="style.css"/>
 <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-<style> 
+<style>
 .comm-layout{display:flex;height:100vh;overflow:hidden}
 .comm-sidebar{width:240px;min-width:240px;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow-y:auto;flex-shrink:0}
 .comm-sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
@@ -172,16 +172,22 @@ function loadRepos(){
 document.getElementById('comm-loading').style.display='flex';
 document.getElementById('repo-grid').style.display='none';
 document.getElementById('comm-empty').style.display='none';
+allRepos=[];
 const seen=new Set();
-const timeout=setTimeout(()=>{render();},8000);
-gun.get('hostica-community').map().once(function(node,key){
+let renderTimer=null;
+function scheduleRender(){clearTimeout(renderTimer);renderTimer=setTimeout(render,400);}
+gun.get('hostica-community').map().on(function(node,key){
 if(!node||!node.data||seen.has(key))return;
 seen.add(key);
 try{
 const data=JSON.parse(node.data);
+if(!data||!data.project)return;
+if(typeof Anticurse!=='undefined'){
 if(Anticurse.check(data.project||''))return;
 if(Anticurse.check(data.description||''))return;
-allRepos.push({
+}
+const existing=allRepos.findIndex(r=>r.id===key);
+const repo={
 id:key,
 name:data.project||key,
 owner:data.owner||'unknown',
@@ -194,15 +200,13 @@ views:data.views||0,
 files:data.files||{},
 createdAt:data.created||Date.now(),
 updatedAt:data.updated||data.created||Date.now(),
-});
-clearTimeout(timeout);
-setTimeout(render,200);
+};
+if(existing>=0)allRepos[existing]=repo;
+else allRepos.push(repo);
+scheduleRender();
 }catch(e){}
 });
-setTimeout(()=>{
-clearTimeout(timeout);
-render();
-},10000);
+setTimeout(()=>{render();},6000);
 }
 
 function detectLanguages(files){
@@ -343,7 +347,6 @@ return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// Search input
 const searchInput=document.getElementById('comm-search-input');
 let searchTimer;
 searchInput.addEventListener('input',function(){
@@ -364,7 +367,6 @@ el.addEventListener('click',()=>{searchInput.value=el.textContent;searchQ=el.tex
 });
 document.addEventListener('click',()=>document.getElementById('suggest-box').style.display='none');
 
-// Sort tabs
 document.querySelectorAll('.sort-tab').forEach(btn=>{
 btn.addEventListener('click',()=>{
 document.querySelectorAll('.sort-tab').forEach(b=>b.classList.remove('active'));
@@ -374,7 +376,6 @@ render();
 });
 });
 
-// Filter buttons
 document.querySelectorAll('.filter-btn[data-filter]').forEach(btn=>{
 btn.addEventListener('click',()=>{
 document.querySelectorAll('.filter-btn[data-filter]').forEach(b=>b.classList.remove('active'));
