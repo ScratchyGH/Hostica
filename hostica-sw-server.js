@@ -7,7 +7,7 @@ e.source?.postMessage({type:'READY'});
 }
 if(e.data.type==='CLEAR')store.clear();
 });
-self.addEventListener('fetch',e=>{
+self.addEventListener('fetch',e=>{ 
 const url=new URL(e.request.url);
 if(!url.searchParams.has('__hostica'))return;
 const key=url.searchParams.get('__hostica')||'index.html';
