@@ -1,0 +1,391 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Community — Hostica</title>
+<link rel="stylesheet" href="style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<style>
+.comm-layout{display:flex;height:100vh;overflow:hidden}
+.comm-sidebar{width:240px;min-width:240px;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow-y:auto;flex-shrink:0}
+.comm-sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.comm-sidebar-header a{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text);text-decoration:none}
+.comm-sidebar-header svg{color:var(--accent)}
+.filter-section{padding:12px 16px}
+.filter-section h4{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.filter-btn{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:none;background:transparent;color:var(--text-2);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;transition:background var(--t),color var(--t);text-align:left;font-family:var(--font)}
+.filter-btn:hover{background:var(--bg-3);color:var(--text)}
+.filter-btn.active{background:var(--accent-dim);color:var(--accent)}
+.filter-btn svg{flex-shrink:0;opacity:.7}
+.lang-filter{display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;color:var(--text-2);cursor:pointer;border-radius:var(--radius-sm);transition:background var(--t)}
+.lang-filter:hover{background:var(--bg-3)}
+.lang-filter.active{color:var(--accent)}
+.lang-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.comm-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.comm-topbar{height:52px;background:var(--bg-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;flex-shrink:0}
+.comm-topbar h1{font-size:16px;font-weight:600;color:var(--text)}
+.comm-search{flex:1;max-width:420px;position:relative;display:flex;align-items:center}
+.comm-search svg{position:absolute;left:10px;color:var(--text-3);pointer-events:none}
+.comm-search input{width:100%;padding:7px 12px 7px 34px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--bg-3);color:var(--text);font-size:13px;outline:none;transition:border-color var(--t);font-family:var(--font)}
+.comm-search input:focus{border-color:var(--accent)}
+.sort-tabs{display:flex;gap:2px;background:var(--bg-3);border-radius:var(--radius-sm);padding:2px}
+.sort-tab{padding:5px 12px;border:none;background:transparent;color:var(--text-3);border-radius:4px;font-size:12px;cursor:pointer;font-family:var(--font);transition:background var(--t),color var(--t)}
+.sort-tab.active{background:var(--bg-2);color:var(--text)}
+
+.comm-content{flex:1;overflow-y:auto;padding:16px 20px}
+.repo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+
+.repo-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color var(--t),box-shadow var(--t),transform var(--t);display:flex;flex-direction:column;gap:10px}
+.repo-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow);transform:translateY(-1px)}
+.repo-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.repo-card-title{display:flex;align-items:center;gap:7px}
+.repo-card-title svg{color:var(--text-3);flex-shrink:0}
+.repo-name{font-weight:600;font-size:14px;color:var(--accent)}
+.repo-owner{font-size:12px;color:var(--text-3)}
+.repo-visibility{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.vis-public{background:rgba(74,222,128,.1);color:#4ade80}
+.vis-unlisted{background:rgba(251,191,36,.1);color:#fbbf24}
+.repo-desc{font-size:13px;color:var(--text-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.repo-meta{display:flex;align-items:center;gap:14px;font-size:11px;color:var(--text-3)}
+.repo-meta-item{display:flex;align-items:center;gap:4px}
+.repo-lang-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.repo-tags{display:flex;gap:5px;flex-wrap:wrap}
+.repo-tag{padding:2px 8px;background:var(--bg-3);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text-2)}
+.repo-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);margin-top:auto}
+.repo-actions{display:flex;gap:6px}
+
+.empty-comm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-3);font-size:13px;padding:60px;text-align:center}
+.empty-comm svg{opacity:.2}
+
+.loading-spinner{display:flex;align-items:center;justify-content:center;padding:48px;gap:10px;color:var(--text-3);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.suggest-box{position:absolute;top:100%;left:0;right:0;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);z-index:100;margin-top:4px}
+.suggest-item{padding:8px 12px;font-size:13px;color:var(--text-2);cursor:pointer;transition:background var(--t)}
+.suggest-item:hover{background:var(--bg-3);color:var(--text)}
+
+@media(max-width:768px){
+.comm-sidebar{display:none}
+.comm-topbar{flex-wrap:wrap;height:auto;padding:10px}
+.comm-search{max-width:100%;width:100%}
+}
+</style>
+</head>
+<body style="overflow:hidden">
+<div class="comm-layout">
+
+<aside class="comm-sidebar">
+<div class="comm-sidebar-header">
+<a href="index.html">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+Hostica
+</a>
+</div>
+
+<div class="filter-section">
+<h4>Browse</h4>
+<button class="filter-btn active" data-filter="all">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+All repositories
+</button>
+<button class="filter-btn" data-filter="recent">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+Recently updated
+</button>
+<button class="filter-btn" data-filter="starred">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+Most starred
+</button>
+</div>
+
+<div class="filter-section">
+<h4>Language</h4>
+<div id="lang-filters"></div>
+</div>
+
+<div class="filter-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:12px">
+<a href="index.html" class="filter-btn" style="text-decoration:none">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+Back to editor
+</a>
+</div>
+</aside>
+
+<main class="comm-main">
+<div class="comm-topbar">
+<h1>Community</h1>
+<div class="comm-search">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+<input type="text" id="comm-search-input" placeholder="Search repositories…" autocomplete="off"/>
+<div class="suggest-box" id="suggest-box" style="display:none"></div>
+</div>
+<div class="sort-tabs">
+<button class="sort-tab active" data-sort="updated">Updated</button>
+<button class="sort-tab" data-sort="stars">Stars</button>
+<button class="sort-tab" data-sort="created">Newest</button>
+<button class="sort-tab" data-sort="name">Name</button>
+</div>
+</div>
+<div class="comm-content">
+<div class="loading-spinner" id="comm-loading">
+<div class="spinner"></div>
+<span>Loading repositories…</span>
+</div>
+<div id="repo-grid" class="repo-grid" style="display:none"></div>
+<div class="empty-comm" id="comm-empty" style="display:none">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+<p>No repositories found.</p>
+<span style="font-size:12px;color:var(--text-3)">Be the first to publish one from the editor.</span>
+</div>
+</div>
+</main>
+</div>
+
+<script src="./endpoints/DDoS.js"></script>
+<script src="./endpoints/Licenses.js"></script>
+<script src="./endpoints/Search.js"></script>
+<script src="./endpoints/Anticurse.js"></script>
+<script>
+(function(){
+const LANG_COLORS={
+javascript:'#f7df1e',typescript:'#3178c6',python:'#3572a5',
+html:'#e34c26',css:'#563d7c',rust:'#dea584',
+'c++':'#f34b7d',lua:'#000080',ruby:'#701516',
+php:'#4f5d95',svelte:'#ff3e00',markdown:'#083fa1',
+sql:'#e38c00',go:'#00add8',java:'#b07219',
+coffeescript:'#244776',less:'#1d365d',scss:'#c6538c',
+xml:'#0060ac',json:'#292929'
+};
+
+let allRepos=[];
+let filtered=[];
+let sortBy='updated';
+let filterLang=null;
+let filterType='all';
+let searchQ='';
+
+const gun=Gun(['https://gun.eco/gun','https://relay.peer.ooo/gun']);
+
+function loadRepos(){
+document.getElementById('comm-loading').style.display='flex';
+document.getElementById('repo-grid').style.display='none';
+document.getElementById('comm-empty').style.display='none';
+const seen=new Set();
+const timeout=setTimeout(()=>{render();},8000);
+gun.get('hostica-community').map().once(function(node,key){
+if(!node||!node.data||seen.has(key))return;
+seen.add(key);
+try{
+const data=JSON.parse(node.data);
+if(Anticurse.check(data.project||''))return;
+if(Anticurse.check(data.description||''))return;
+allRepos.push({
+id:key,
+name:data.project||key,
+owner:data.owner||'unknown',
+description:data.description||'',
+visibility:data.visibility||'public',
+languages:data.languages||detectLanguages(data.files||{}),
+tags:data.tags||[],
+stars:data.stars||0,
+views:data.views||0,
+files:data.files||{},
+createdAt:data.created||Date.now(),
+updatedAt:data.updated||data.created||Date.now(),
+});
+clearTimeout(timeout);
+setTimeout(render,200);
+}catch(e){}
+});
+setTimeout(()=>{
+clearTimeout(timeout);
+render();
+},10000);
+}
+
+function detectLanguages(files){
+const langs=new Set();
+Object.keys(files).forEach(fn=>{
+const ext=fn.split('.').pop().toLowerCase();
+const map={js:'javascript',ts:'typescript',py:'python',html:'html',css:'css',
+rs:'rust',cpp:'c++',lua:'lua',rb:'ruby',php:'php',svelte:'svelte',
+md:'markdown',sql:'sql',go:'go',java:'java',coffee:'coffeescript',
+less:'less',scss:'scss',xml:'xml',json:'json'};
+if(map[ext])langs.add(map[ext]);
+});
+return[...langs];
+}
+
+function render(){
+document.getElementById('comm-loading').style.display='none';
+Search.index(allRepos);
+let results;
+if(searchQ.trim()){
+results=Search.search(searchQ,{sortBy,language:filterLang,limit:200});
+}else{
+results=Search.sort(allRepos,{sortBy,language:filterLang,limit:200});
+}
+if(filterType==='recent'){
+const week=Date.now()-7*86400000;
+results=results.filter(r=>(r.updatedAt||r.createdAt||0)>week);
+}else if(filterType==='starred'){
+results=[...results].sort((a,b)=>b.stars-a.stars);
+}
+filtered=results;
+const grid=document.getElementById('repo-grid');
+const empty=document.getElementById('comm-empty');
+if(!filtered.length){
+grid.style.display='none';empty.style.display='flex';
+}else{
+empty.style.display='none';
+grid.style.display='grid';
+grid.innerHTML=filtered.map(r=>repoCard(r)).join('');
+grid.querySelectorAll('.repo-card').forEach(card=>{
+card.addEventListener('click',()=>{
+const id=card.dataset.id;
+window.location.href='view.html?id='+encodeURIComponent(id);
+});
+});
+grid.querySelectorAll('[data-action="site"]').forEach(btn=>{
+btn.addEventListener('click',e=>{
+e.stopPropagation();
+window.location.href='site.html?id='+encodeURIComponent(btn.dataset.id);
+});
+});
+grid.querySelectorAll('[data-star]').forEach(btn=>{
+btn.addEventListener('click',e=>{
+e.stopPropagation();
+const id=btn.dataset.star;
+const r=allRepos.find(x=>x.id===id);
+if(r){r.stars=(r.stars||0)+1;gun.get('hostica-community').get(id).get('stars').put(r.stars);btn.querySelector('span').textContent=r.stars;}
+});
+});
+}
+buildLangFilters();
+}
+
+function repoCard(r){
+const langDots=r.languages.slice(0,3).map(l=>`<span class="repo-lang-dot" style="background:${LANG_COLORS[l]||'#888'}" title="${l}"></span>`).join('');
+const primaryLang=r.languages[0]||'';
+const tags=r.tags.slice(0,3).map(t=>`<span class="repo-tag">${esc(t)}</span>`).join('');
+const ago=timeAgo(r.updatedAt||r.createdAt);
+const visCls=r.visibility==='unlisted'?'vis-unlisted':'vis-public';
+const visLabel=r.visibility==='unlisted'?'Unlisted':'Public';
+return`<div class="repo-card" data-id="${esc(r.id)}">
+<div class="repo-card-header">
+<div class="repo-card-title">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+<div>
+<div class="repo-name">${esc(r.owner)} / <strong>${esc(r.name)}</strong></div>
+</div>
+</div>
+<span class="repo-visibility ${visCls}">${visLabel}</span>
+</div>
+${r.description?`<div class="repo-desc">${esc(r.description)}</div>`:''}
+${tags?`<div class="repo-tags">${tags}</div>`:''}
+<div class="repo-meta">
+<div class="repo-meta-item">${langDots}<span>${primaryLang}</span></div>
+<div class="repo-meta-item">
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+<span>${r.stars||0}</span>
+</div>
+<div class="repo-meta-item">
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+<span>${ago}</span>
+</div>
+</div>
+<div class="repo-footer">
+<div class="repo-actions">
+<button class="btn-secondary sm" data-action="site" data-id="${esc(r.id)}">
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+View site
+</button>
+<button class="btn-secondary sm" data-star="${esc(r.id)}">
+<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+<span>${r.stars||0}</span>
+</button>
+</div>
+<span style="font-size:11px;color:var(--text-3)">${Object.keys(r.files||{}).length} files</span>
+</div>
+</div>`;
+}
+
+function buildLangFilters(){
+const langs=new Map();
+allRepos.forEach(r=>(r.languages||[]).forEach(l=>langs.set(l,(langs.get(l)||0)+1)));
+const sorted=[...langs.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
+const container=document.getElementById('lang-filters');
+container.innerHTML=sorted.map(([l,count])=>`
+<div class="lang-filter${filterLang===l?' active':''}" data-lang="${l}">
+<div class="lang-dot" style="background:${LANG_COLORS[l]||'#888'}"></div>
+<span>${l}</span>
+<span style="margin-left:auto;font-size:11px;color:var(--text-3)">${count}</span>
+</div>`).join('');
+container.querySelectorAll('.lang-filter').forEach(el=>{
+el.addEventListener('click',()=>{
+filterLang=filterLang===el.dataset.lang?null:el.dataset.lang;
+render();
+});
+});
+}
+
+function timeAgo(ts){
+if(!ts)return'';
+const s=Math.floor((Date.now()-ts)/1000);
+if(s<60)return'just now';
+if(s<3600)return Math.floor(s/60)+'m ago';
+if(s<86400)return Math.floor(s/3600)+'h ago';
+if(s<2592000)return Math.floor(s/86400)+'d ago';
+return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Search input
+const searchInput=document.getElementById('comm-search-input');
+let searchTimer;
+searchInput.addEventListener('input',function(){
+searchQ=this.value;
+clearTimeout(searchTimer);
+searchTimer=setTimeout(()=>{
+render();
+const sugs=Search.suggest(searchQ,5);
+const box=document.getElementById('suggest-box');
+if(sugs.length&&searchQ.length>=2){
+box.innerHTML=sugs.map(s=>`<div class="suggest-item">${esc(s)}</div>`).join('');
+box.style.display='block';
+box.querySelectorAll('.suggest-item').forEach(el=>{
+el.addEventListener('click',()=>{searchInput.value=el.textContent;searchQ=el.textContent;box.style.display='none';render();});
+});
+}else{box.style.display='none';}
+},250);
+});
+document.addEventListener('click',()=>document.getElementById('suggest-box').style.display='none');
+
+// Sort tabs
+document.querySelectorAll('.sort-tab').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.sort-tab').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+sortBy=btn.dataset.sort;
+render();
+});
+});
+
+// Filter buttons
+document.querySelectorAll('.filter-btn[data-filter]').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.filter-btn[data-filter]').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+filterType=btn.dataset.filter;
+render();
+});
+});
+
+loadRepos();
+})();
+</script>
+</body>
+</html>

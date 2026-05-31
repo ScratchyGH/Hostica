@@ -1,0 +1,211 @@
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hostica — View</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#111110;--bg-2:#1a1917;--bg-3:#222120;--border:#2e2c2a;--border-strong:#3a3835;--text:#e8e4df;--text-2:#9a9590;--text-3:#5a5652;--accent:#e77c3e;--t:160ms cubic-bezier(.4,0,.2,1);--font:'Geist','Inter',system-ui,sans-serif}
+html,body{height:100%;width:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+#topbar{height:48px;background:var(--bg-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:100}
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text);text-decoration:none;transition:opacity .2s}
+.tb-logo:hover{opacity:.7;text-decoration:none}
+.tb-logo svg{color:var(--accent)}
+.tb-sep{color:var(--text-3);font-size:16px}
+.tb-project{font-size:13px;font-weight:500;color:var(--text-2)}
+.tb-author{font-size:12px;color:var(--text-3)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;background:rgba(231,124,62,.1);color:rgba(231,124,62,.7)}
+.pill.live::before{content:'';width:6px;height:6px;border-radius:50%;background:#4ade80;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-tb{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:transparent;color:var(--text-2);border:1px solid var(--border-strong);border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;transition:background var(--t),color var(--t);font-family:var(--font)}
+.btn-tb:hover{background:var(--bg-3);color:var(--text);text-decoration:none}
+#layout{display:flex;height:calc(100vh - 48px)}
+#file-sidebar{width:200px;min-width:200px;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.fs-header{padding:9px 12px;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.fs-list{list-style:none;padding:6px 0;flex:1;overflow-y:auto}
+.fs-list li{display:flex;align-items:center;gap:7px;padding:6px 10px;font-size:12px;font-family:'Geist Mono',monospace;color:var(--text-2);cursor:pointer;border-radius:5px;margin:1px 6px;transition:background var(--t),color var(--t)}
+.fs-list li:hover{background:var(--bg-3);color:var(--text)}
+.fs-list li.active{background:rgba(231,124,62,.1);color:var(--accent);font-weight:500}
+#viewer{flex:1;background:#0d0d0c;overflow:hidden;display:flex;flex-direction:column}
+#viewer.preview-mode{background:#fff}
+#code-view{flex:1;overflow:auto;padding:20px 24px;font-family:'Geist Mono','Fira Code',monospace;font-size:13px;line-height:1.7;color:#cdd3de;tab-size:2;white-space:pre;display:block}
+#preview-view{flex:1;border:none;display:none;width:100%;height:100%}
+#state{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)}
+#state svg{opacity:.2}
+#state h2{font-size:18px;font-weight:600;color:var(--text)}
+#state p{font-size:13px;color:var(--text-2);max-width:360px;text-align:center;line-height:1.5}
+#state .err-detail{font-size:12px;color:#e05252;font-family:monospace;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.2);padding:8px 12px;border-radius:6px;max-width:400px;word-break:break-all}
+.view-toggle{display:flex;background:var(--bg-3);border-radius:6px;padding:2px;gap:2px}
+.vt-btn{padding:4px 10px;border:none;background:transparent;color:var(--text-3);border-radius:4px;font-size:12px;cursor:pointer;font-family:var(--font);transition:background var(--t),color var(--t)}
+.vt-btn.active{background:var(--bg-2);color:var(--text)}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+@media(max-width:640px){#file-sidebar{display:none}.tb-author{display:none}}
+</style>
+</head>
+<body>
+
+<div id="state">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+<h2>Loading project…</h2>
+<p>Reading the shared project from the link.</p>
+</div>
+
+<div id="topbar" style="display:none">
+<div class="tb-left">
+<a class="tb-logo" href="index.html">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+Hostica
+</a>
+<span class="tb-sep">/</span>
+<span class="tb-author" id="tb-author"></span>
+<span class="tb-sep" id="tb-sep2">/</span>
+<span class="tb-project" id="tb-project"></span>
+<span class="pill live">Live</span>
+</div>
+<div class="tb-right">
+<div class="view-toggle">
+<button class="vt-btn" id="vt-code">Code</button>
+<button class="vt-btn active" id="vt-preview">Preview</button>
+</div>
+<button class="btn-tb" id="btn-fullscreen">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+Fullscreen
+</button>
+<a class="btn-tb" href="index.html">Open editor</a>
+</div>
+</div>
+
+<div id="layout" style="display:none">
+<div id="file-sidebar">
+<div class="fs-header">Files</div>
+<ul class="fs-list" id="fs-list"></ul>
+</div>
+<div id="viewer">
+<pre id="code-view"></pre>
+<iframe id="preview-view" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe>
+</div>
+</div>
+
+<script>
+(function(){
+const state=document.getElementById('state');
+const topbar=document.getElementById('topbar');
+const layout=document.getElementById('layout');
+const codeView=document.getElementById('code-view');
+const previewView=document.getElementById('preview-view');
+const fsList=document.getElementById('fs-list');
+const vtCode=document.getElementById('vt-code');
+const vtPreview=document.getElementById('vt-preview');
+const viewer=document.getElementById('viewer');
+
+let proj=null,activeFile='index.html',mode='preview';
+
+function showErr(title,detail,hint){
+state.innerHTML=`<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#e05252" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><h2>${title}</h2>${hint?`<p>${hint}</p>`:''}<div class="err-detail">${detail}</div><a href="index.html" style="margin-top:8px;color:#e77c3e;font-size:13px">Go to editor</a>`;
+}
+
+function decode(hash){
+try{return JSON.parse(decodeURIComponent(escape(atob(hash))));}
+catch{try{return JSON.parse(atob(hash));}catch{return null;}}
+}
+
+function buildHTML(files){
+let html=files['index.html']||'<p>No index.html</p>';
+html=html.replace(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/gi,(m,href)=>{return files[href]?`<style>${files[href]}</style>`:m;});
+html=html.replace(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{if(/offlineworker/.test(src))return'';return files[src]?`<script>${files[src]}<\/script>`:m;});
+return html;
+}
+
+function renderFile(name){
+activeFile=name;
+fsList.querySelectorAll('li').forEach(li=>li.classList.toggle('active',li.dataset.file===name));
+if(mode==='code'){
+codeView.textContent=proj.files[name]||'';
+}else{
+const blob=new Blob([buildHTML(proj.files)],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+previewView.src=url;
+setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+}
+
+function setMode(m){
+mode=m;
+vtCode.classList.toggle('active',m==='code');
+vtPreview.classList.toggle('active',m==='preview');
+viewer.classList.toggle('preview-mode',m==='preview');
+codeView.style.display=m==='code'?'block':'none';
+previewView.style.display=m==='preview'?'block':'none';
+renderFile(activeFile);
+}
+
+function showProject(data){
+proj=data;
+document.getElementById('tb-author').textContent=data.owner||data.u||'';
+document.getElementById('tb-project').textContent=data.project_name||data.n||'Project';
+document.title=(data.project_name||data.n||'Project')+' — Hostica';
+const files=Object.keys(data.files).sort();
+fsList.innerHTML=files.map(fn=>`<li data-file="${fn}">${fileIcon(fn)}<span>${fn}</span></li>`).join('');
+fsList.querySelectorAll('li').forEach(li=>li.addEventListener('click',()=>renderFile(li.dataset.file)));
+state.style.display='none';
+topbar.style.display='flex';
+layout.style.display='flex';
+setMode('preview');
+}
+
+function load(){
+const params=new URLSearchParams(window.location.search);
+const id=params.get('id');
+const p=params.get('p')||window.location.hash.slice(1);
+
+if(id){
+const gun=Gun(['https://gun.eco/gun','https://relay.peer.ooo/gun']);
+const timeout=setTimeout(()=>showErr('Timed out','Could not load project.','The project may not exist or the network is unavailable.'),12000);
+gun.get('hostica').get(id).once(function(node){
+clearTimeout(timeout);
+if(!node||!node.data){showErr('Not found','No project found for this link.','The project may have been deleted or the link is invalid.');return;}
+try{
+const data=JSON.parse(node.data);
+if(data.f&&!data.files)data.files=data.f;
+showProject({owner:data.owner,project_name:data.project,files:data.files||{}});
+}catch(e){showErr('Parse error',e.message,'Project data is corrupted.');}
+});
+return;
+}
+
+if(p){
+const data=decode(p);
+if(!data){showErr('Invalid link','Could not decode share data.','The link may be corrupted.');return;}
+if(data.f&&!data.files)data.files=data.f;
+if(!data.files){showErr('Invalid link','No files found in share data.','');return;}
+showProject(data);
+return;
+}
+
+showErr('No project','Nothing to show.','Open a valid share link from Hostica.');
+}
+
+function fileIcon(n){
+if(/\.html?$/.test(n))return`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e77c3e" stroke-width="1.5" style="flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
+if(/\.css$/.test(n))return`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>`;
+if(/\.js$/.test(n))return`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="1.5" style="flex-shrink:0"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+return`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+}
+
+vtCode.addEventListener('click',()=>setMode('code'));
+vtPreview.addEventListener('click',()=>setMode('preview'));
+
+document.getElementById('btn-fullscreen').addEventListener('click',()=>{
+const frame=document.getElementById('preview-view');
+if(frame.requestFullscreen)frame.requestFullscreen();
+});
+
+load();
+})();
+</script>
+</body>
+</html>

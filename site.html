@@ -1,0 +1,75 @@
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Loading…</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0a0908;font-family:system-ui,sans-serif}
+#frame{width:100%;height:100%;border:none;display:none}
+#state{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0a0908;color:rgba(255,255,255,.4);font-size:13px}
+#state svg{opacity:.25}
+#err{color:#e05252;font-size:12px;max-width:360px;text-align:center;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="state">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+<span>Loading…</span>
+<span id="err"></span>
+</div>
+<iframe id="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-top-navigation"></iframe>
+<script>
+(async function(){
+const params=new URLSearchParams(window.location.search);
+const id=params.get('id');
+const p=params.get('p')||window.location.hash.slice(1);
+const errEl=document.getElementById('err');
+const stateEl=document.getElementById('state');
+
+function render(files,title){
+document.title=title||'Site';
+let html=files['index.html']||'<p style="font:14px system-ui;padding:32px;color:#999">No index.html found.</p>';
+html=html.replace(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/gi,(m,href)=>files[href]?`<style>${files[href]}</style>`:m);
+html=html.replace(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi,(m,src)=>{if(/offlineworker/.test(src))return'';return files[src]?'<script>'+files[src]+'<\/script>':m;});
+const blob=new Blob([html],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+const frame=document.getElementById('frame');
+frame.onload=()=>{stateEl.style.display='none';frame.style.display='block';URL.revokeObjectURL(url);};
+frame.src=url;
+}
+
+if(id){
+const gun=Gun(['https://gun.eco/gun','https://relay.peer.ooo/gun']);
+const tout=setTimeout(()=>{errEl.textContent='Timed out — project not found.';},12000);
+gun.get('hostica').get(id).once(function(node){
+clearTimeout(tout);
+if(!node||!node.data){errEl.textContent='Project not found.';return;}
+try{
+const data=JSON.parse(node.data);
+if(data.f&&!data.files)data.files=data.f;
+render(data.files||{},data.project||'Site');
+}catch(e){errEl.textContent='Parse error: '+e.message;}
+});
+return;
+}
+
+if(p){
+try{
+let data;
+try{data=JSON.parse(decodeURIComponent(escape(atob(p))));}
+catch{data=JSON.parse(atob(p));}
+if(data.f&&!data.files)data.files=data.f;
+if(!data||!data.files){errEl.textContent='Invalid share link.';return;}
+render(data.files,data.project_name||data.n);
+}catch{errEl.textContent='Could not decode share link.';}
+return;
+}
+
+errEl.textContent='No project data in URL.';
+document.querySelector('#state span').textContent='Nothing to show';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Hostica</title>
+<link rel="stylesheet" href="style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/dexie@3.2.7/dist/dexie.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/ruby/ruby.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/lua/lua.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/coffeescript/coffeescript.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sass/sass.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/otpauth@9.3.6/dist/otpauth.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="auth-screen" class="screen">
+<div class="auth-card">
+<div class="auth-logo">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+<span>Hostica</span>
+</div>
+<div id="auth-login" class="auth-form">
+<h2>Sign in</h2>
+<p class="auth-sub">Welcome back to your workspace</p>
+<div class="field"><label>Username</label><input id="login-username" type="text" placeholder="username" autocomplete="username"/></div>
+<div class="field"><label>Password</label><input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"/></div>
+<div id="login-2fa-wrap" class="field" style="display:none"><label>Auth code</label><input id="login-totp" type="text" placeholder="6-digit code" maxlength="6" inputmode="numeric"/></div>
+<button class="btn-primary full" id="btn-login">Sign in</button>
+<div class="auth-switch">No account? <a href="#" id="go-register">Create one</a></div>
+<div id="login-error" class="form-error"></div>
+</div>
+<div id="auth-register" class="auth-form" style="display:none">
+<h2>Create account</h2>
+<p class="auth-sub">Everything stays local in your browser</p>
+<div class="field"><label>Username</label><input id="reg-username" type="text" placeholder="pick a username"/></div>
+<div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="min 8 characters"/></div>
+<div class="field"><label>Confirm</label><input id="reg-confirm" type="password" placeholder="repeat password"/></div>
+<button class="btn-primary full" id="btn-register">Create account</button>
+<div class="auth-switch">Have an account? <a href="#" id="go-login">Sign in</a></div>
+<div id="reg-error" class="form-error"></div>
+</div>
+<div id="auth-2fa-setup" class="auth-form" style="display:none">
+<h2>Set up 2FA</h2>
+<p class="auth-sub">Scan with Google Authenticator or Authy</p>
+<div id="qr-canvas" style="margin:16px auto;display:flex;justify-content:center"></div>
+<div class="field"><label>Manual key</label><input id="totp-secret-display" type="text" readonly style="font-family:monospace;font-size:12px"/></div>
+<div class="field"><label>Verify code</label><input id="setup-totp" type="text" placeholder="6-digit code" maxlength="6" inputmode="numeric"/></div>
+<button class="btn-primary full" id="btn-enable-2fa">Enable &amp; continue</button>
+<button class="btn-ghost full" id="btn-skip-2fa">Skip</button>
+<div id="setup-2fa-error" class="form-error"></div>
+</div>
+</div>
+</div>
+
+<div id="app-screen" class="screen" style="display:none">
+<aside id="sidebar">
+<div class="sidebar-header">
+<div class="sidebar-logo">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+<span>Hostica</span>
+</div>
+</div>
+<nav class="sidebar-nav">
+<button class="nav-item active" data-view="dashboard">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+<span>Projects</span>
+</button>
+<button class="nav-item" id="nav-community" onclick="window.location.href='community.html'">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+<span>Community</span>
+</button>
+<button class="nav-item" id="nav-community" onclick="window.location.href='community.html'">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+<span>Community</span>
+</button>
+<button class="nav-item" data-view="editor" id="nav-editor" style="display:none">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+<span>Editor</span>
+</button>
+</nav>
+<div class="sidebar-bottom">
+<div class="user-chip"><div class="user-avatar" id="user-avatar-text">U</div><span id="user-display-name">User</span></div>
+<button class="icon-btn" id="btn-settings" title="Settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+<button class="icon-btn danger" id="btn-logout" title="Sign out"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+</div>
+</aside>
+
+<main id="main-content">
+<section id="view-dashboard" class="view">
+<div class="view-header">
+<div><h1 id="dashboard-greeting">Projects</h1><p class="view-sub">Your local websites</p></div>
+<div class="header-actions">
+<div class="search-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="project-search" placeholder="Search…"/></div>
+<button class="btn-primary" id="btn-new-project"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New</button>
+<button class="btn-secondary" id="btn-import-project"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Import</button>
+<input type="file" id="import-file-input" accept=".zip,.html" style="display:none" multiple/>
+</div>
+</div>
+<div class="stats-row">
+<div class="stat-card"><div class="stat-val" id="stat-projects">0</div><div class="stat-label">Projects</div></div>
+<div class="stat-card"><div class="stat-val" id="stat-files">0</div><div class="stat-label">Files</div></div>
+<div class="stat-card"><div class="stat-val" id="stat-size">0 KB</div><div class="stat-label">Storage</div></div>
+<div class="stat-card"><div class="stat-val" id="stat-offline">Online</div><div class="stat-label">Status</div></div>
+</div>
+<div id="projects-grid" class="projects-grid"></div>
+<div id="projects-empty" class="empty-state" style="display:none">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+<p>No projects. Create one to start.</p>
+</div>
+</section>
+
+<section id="view-editor" class="view" style="display:none">
+<div class="editor-topbar">
+<div class="editor-breadcrumb">
+<button class="crumb-back" id="editor-back"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+<span id="editor-project-name">Project</span>
+<span class="crumb-sep">/</span>
+<span id="editor-file-name" class="crumb-file">index.html</span>
+</div>
+<div class="editor-actions">
+<span id="autosave-badge" class="badge badge-saved">Saved</span>
+<button class="btn-icon-label" id="btn-undo" title="Undo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg></button>
+<button class="btn-icon-label" id="btn-redo" title="Redo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg></button>
+<button class="btn-secondary sm" id="btn-add-file"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>File</button>
+<button class="btn-secondary sm" id="btn-run" title="Run file (Python/SQL/Lua)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run</button>
+<button class="btn-secondary sm" id="btn-preview"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+<button class="btn-secondary sm" id="btn-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play</button>
+<button class="btn-secondary sm" id="btn-share"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
+<button class="btn-primary sm" id="btn-export"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export</button>
+</div>
+</div>
+<div class="editor-layout">
+<div class="file-panel" id="file-panel">
+<div class="file-panel-header"><span>Files</span><button id="btn-upload-file" title="Upload files"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button></div>
+<ul id="file-tree" class="file-tree"></ul>
+<input type="file" id="upload-file-input" style="display:none" multiple/>
+<input type="file" id="import-file-input" accept=".zip,.html" style="display:none" multiple/>
+</div>
+<div class="code-panel" id="code-panel"><div id="cm-wrapper"></div></div>
+<div class="preview-panel" id="preview-panel" style="display:none">
+<div class="preview-bar"><span>Preview</span><button class="icon-btn sm" id="btn-close-preview"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals"></iframe>
+</div>
+</div>
+</section>
+</main>
+
+<div id="terminal-panel" style="display:none;position:fixed;bottom:0;left:var(--sidebar-w);right:0;height:200px;background:#0d0d0c;border-top:1px solid var(--border);display:none;flex-direction:column;z-index:50">
+<div style="height:34px;background:var(--bg-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;font-weight:500;color:var(--text-2);flex-shrink:0">
+<span>Terminal</span>
+<button class="icon-btn sm modal-close" id="btn-close-terminal"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+</div>
+<pre id="terminal-output" style="flex:1;overflow-y:auto;padding:10px 14px;font-family:var(--mono);font-size:12px;color:#a8ff78;margin:0;white-space:pre-wrap;word-break:break-all"></pre>
+</div>
+</div>
+
+<div id="modal-new-project" class="modal-overlay" style="display:none">
+<div class="modal">
+<div class="modal-header"><h3>New project</h3><button class="icon-btn modal-close" data-modal="modal-new-project"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body">
+<div class="field"><label>Name</label><input type="text" id="new-project-name" placeholder="My Website"/></div>
+<div class="field"><label>Template</label>
+<div class="template-grid" id="template-grid">
+<div class="template-item selected" data-template="blank"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg><span>Blank</span></div>
+<div class="template-item" data-template="basic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="11" height="11" rx="1"/><rect x="16" y="10" width="5" height="11" rx="1"/></svg><span>Basic</span></div>
+<div class="template-item" data-template="landing"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="9" width="18" height="8" rx="1"/><rect x="3" y="19" width="18" height="2" rx="1"/></svg><span>Landing</span></div>
+<div class="template-item" data-template="portfolio"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="9" width="8" height="12" rx="1"/><rect x="13" y="9" width="8" height="5" rx="1"/><rect x="13" y="16" width="8" height="5" rx="1"/></svg><span>Portfolio</span></div>
+</div>
+</div>
+<div class="field"><label>Visibility</label>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--text-2);text-transform:none;letter-spacing:0">
+<input type="radio" name="proj-visibility" value="public" checked style="margin-top:2px;accent-color:var(--accent)"/>
+<div><strong style="color:var(--text)">Public</strong><br><span style="font-size:12px">Anyone can view and it appears in Community.</span></div>
+</label>
+<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--text-2);text-transform:none;letter-spacing:0">
+<input type="radio" name="proj-visibility" value="unlisted" style="margin-top:2px;accent-color:var(--accent)"/>
+<div><strong style="color:var(--text)">Unlisted</strong><br><span style="font-size:12px">Shareable via link, but not listed in Community.</span></div>
+</label>
+<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--text-2);text-transform:none;letter-spacing:0">
+<input type="radio" name="proj-visibility" value="private" style="margin-top:2px;accent-color:var(--accent)"/>
+<div><strong style="color:var(--text)">Private</strong><br><span style="font-size:12px">Local only. Cannot be hosted or shared.</span></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer"><button class="btn-ghost" data-modal="modal-new-project">Cancel</button><button class="btn-primary" id="btn-create-project">Create</button></div>
+</div>
+</div>
+
+<div id="modal-settings" class="modal-overlay" style="display:none">
+<div class="modal">
+<div class="modal-header"><h3>Settings</h3><button class="icon-btn modal-close" data-modal="modal-settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body">
+<div class="settings-section"><h4>Account</h4>
+<div class="field"><label>Username</label><input type="text" id="settings-username" readonly/></div>
+<div class="field"><label>Two-factor auth</label><div class="toggle-row"><span id="2fa-status-label">Off</span><button class="btn-secondary sm" id="btn-toggle-2fa">Enable</button></div></div>
+</div>
+<div class="settings-section"><h4>Editor</h4>
+<div class="field"><label>Font size</label><select id="settings-font-size"><option value="12">12px</option><option value="13">13px</option><option value="14" selected>14px</option><option value="15">15px</option><option value="16">16px</option></select></div>
+<div class="field"><label>Theme</label><select id="settings-theme"><option value="material-darker">Dark</option><option value="default">Light</option></select></div>
+</div>
+<div class="settings-section danger-zone"><h4>Danger</h4><button class="btn-danger" id="btn-delete-account">Delete account &amp; all data</button></div>
+</div>
+<div class="modal-footer"><button class="btn-primary" id="btn-save-settings">Save</button></div>
+</div>
+</div>
+
+<div id="modal-add-file" class="modal-overlay" style="display:none">
+<div class="modal sm">
+<div class="modal-header"><h3>New file</h3><button class="icon-btn modal-close" data-modal="modal-add-file"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body"><div class="field"><label>Name</label><input type="text" id="new-file-name" placeholder="about.html"/></div></div>
+<div class="modal-footer"><button class="btn-ghost" data-modal="modal-add-file">Cancel</button><button class="btn-primary" id="btn-create-file">Create</button></div>
+</div>
+</div>
+
+<div id="modal-play" class="modal-overlay" style="display:none">
+<div class="modal fullscreen-modal">
+<div class="modal-header"><h3 id="play-modal-title">Play</h3><div style="display:flex;gap:8px;align-items:center"><span class="badge badge-live">Live</span><button class="icon-btn modal-close" data-modal="modal-play"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
+<div class="modal-body" style="padding:0;flex:1"><iframe id="play-frame" style="width:100%;height:100%;border:none" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups"></iframe></div>
+</div>
+</div>
+
+<div id="modal-share" class="modal-overlay" style="display:none">
+<div class="modal sm">
+<div class="modal-header"><h3>Share project</h3><button class="icon-btn modal-close" data-modal="modal-share"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;background:var(--bg-3);border-radius:var(--radius-sm)">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+<span id="share-proj-author" style="font-size:12px;color:var(--text-3)"></span>
+<span style="color:var(--text-3);font-size:12px">/</span>
+<span id="share-proj-name" style="font-size:12px;font-weight:600;color:var(--text-2)"></span>
+</div>
+<div class="field"><label>View + code</label><div style="display:flex;gap:6px"><input type="text" id="share-url" readonly style="flex:1;font-size:12px;font-family:monospace"/><button class="btn-secondary sm" id="btn-copy-share">Copy</button></div><p style="font-size:11px;color:var(--text-3);margin-top:4px">Opens the viewer with file browser and code tab.</p></div>
+<div class="field" style="margin-top:12px"><label>Site only</label><div style="display:flex;gap:6px"><input type="text" id="share-site-url" readonly style="flex:1;font-size:12px;font-family:monospace"/><button class="btn-secondary sm" id="btn-copy-site">Copy</button></div><p style="font-size:11px;color:var(--text-3);margin-top:4px">Opens just the rendered site, no Hostica UI.</p></div>
+</div>
+<div class="modal-footer"><button class="btn-ghost" data-modal="modal-share">Close</button></div>
+</div>
+</div>
+
+<div id="modal-license" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:560px">
+<div class="modal-header"><h3>Choose a license</h3><button class="icon-btn modal-close" data-modal="modal-license"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body" style="padding:0">
+<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap">
+<button class="sort-tab active" data-lf="all">All</button>
+<button class="sort-tab" data-lf="open">Open source</button>
+<button class="sort-tab" data-lf="restricted">Restricted</button>
+</div>
+<div id="license-list" style="max-height:340px;overflow-y:auto;padding:8px"></div>
+</div>
+<div class="modal-footer"><button class="btn-ghost" data-modal="modal-license">Cancel</button><button class="btn-primary" id="btn-apply-license">Apply</button></div>
+</div>
+</div>
+
+<div id="modal-repo-view" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:700px;height:85vh">
+<div class="modal-header">
+<div style="display:flex;align-items:center;gap:10px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+<span id="repo-view-name" style="font-weight:600;font-size:14px;color:var(--accent)"></span>
+<span id="repo-view-vis" class="repo-visibility" style="font-size:10px"></span>
+</div>
+<button class="icon-btn modal-close" data-modal="modal-repo-view"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+</div>
+<div class="modal-body" style="padding:0;display:flex;flex-direction:column;gap:0">
+<div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+<div style="flex:1;min-width:0">
+<div id="repo-view-desc" style="font-size:13px;color:var(--text-2);margin-bottom:8px"></div>
+<div id="repo-view-tags" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-3);min-width:140px">
+<div id="repo-view-license" style="display:flex;align-items:center;gap:5px"></div>
+<div id="repo-view-langs" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+<div id="repo-view-meta" style="display:flex;gap:10px"></div>
+</div>
+</div>
+<div style="display:flex;border-bottom:1px solid var(--border);padding:0 20px;gap:0">
+<button class="repo-tab active" data-tab="files"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Files</button>
+<button class="repo-tab" data-tab="readme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>README</button>
+</div>
+<div id="repo-tab-files" style="flex:1;overflow-y:auto;padding:8px 20px"></div>
+<div id="repo-tab-readme" style="flex:1;overflow-y:auto;padding:16px 20px;display:none;font-size:13px;color:var(--text-2);line-height:1.6"></div>
+</div>
+<div class="modal-footer">
+<button class="btn-secondary" id="btn-repo-play"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Play</button>
+<button class="btn-secondary" id="btn-repo-share"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg>Share</button>
+<button class="btn-primary" id="btn-repo-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit project</button>
+</div>
+</div>
+</div>
+
+<div id="modal-tutorial" class="modal-overlay" style="display:none">
+<div class="modal" style="max-width:600px">
+<div class="modal-header"><h3>Welcome to Hostica</h3><button class="icon-btn modal-close" data-modal="modal-tutorial"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+<div class="modal-body" style="padding:0">
+<div id="tut-slides">
+<div class="tut-slide" data-slide="0">
+<div class="tut-hero" style="background:linear-gradient(135deg,var(--bg-3),var(--bg-4));padding:32px;text-align:center">
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+<h2 style="margin-top:12px;font-size:22px">Build &amp; host websites in your browser</h2>
+<p style="color:var(--text-2);margin-top:8px;font-size:14px">No server. No setup. Everything runs locally.</p>
+</div>
+<div style="padding:20px">
+<div class="tut-step"><div class="tut-num">1</div><div><strong>Create a project</strong><p>Click New on the dashboard. Pick a template or start blank.</p></div></div>
+<div class="tut-step"><div class="tut-num">2</div><div><strong>Edit your files</strong><p>The editor supports HTML, CSS, JS, TypeScript, Python, Rust, Go, C++, Lua, SQL and more. Changes save automatically.</p></div></div>
+<div class="tut-step"><div class="tut-num">3</div><div><strong>Preview live</strong><p>Click Preview for a side-by-side view, or Play for fullscreen.</p></div></div>
+</div>
+</div>
+<div class="tut-slide" data-slide="1" style="display:none">
+<div style="padding:24px">
+<h3 style="margin-bottom:16px;font-size:16px">Sharing &amp; publishing</h3>
+<div class="tut-step"><div class="tut-num">4</div><div><strong>Share your project</strong><p>Click Share in the editor. Choose a visibility type and publish to the Gun.js network.</p></div></div>
+<div class="tut-step"><div class="tut-num">5</div><div><strong>Three visibility types</strong><p><span class="tut-badge pub">Public</span> — Searchable in Community, hostable via share link.<br><span class="tut-badge unl">Unlisted</span> — Hostable but not in search results.<br><span class="tut-badge prv">Private</span> — Stays local, no sharing.</p></div></div>
+<div class="tut-step"><div class="tut-num">6</div><div><strong>Two share links</strong><p><em>View + code</em> shows your project with a file browser. <em>Site only</em> shows just your site — like a real hosted URL.</p></div></div>
+</div>
+</div>
+<div class="tut-slide" data-slide="2" style="display:none">
+<div style="padding:24px">
+<h3 style="margin-bottom:16px;font-size:16px">Community &amp; advanced features</h3>
+<div class="tut-step"><div class="tut-num">7</div><div><strong>Browse Community</strong><p>Click Community in the sidebar to discover public projects, filter by language, sort by stars, and fork anything you like.</p></div></div>
+<div class="tut-step"><div class="tut-num">8</div><div><strong>Import projects</strong><p>Drag a .zip or .html file onto the Files panel in the editor, or use Import on the dashboard.</p></div></div>
+<div class="tut-step"><div class="tut-num">9</div><div><strong>Backend languages via WASM</strong><p>Python, Lua, and SQL run directly in the browser via WebAssembly. TypeScript, JSX, SCSS, Svelte, Markdown, and CoffeeScript compile on the fly.</p></div></div>
+<div style="margin-top:20px;padding:14px;background:var(--bg-3);border-radius:var(--radius-sm)">
+<p style="font-size:12px;color:var(--text-2)">All data is stored locally in your browser. Your account never leaves your device. Projects you publish are stored on the Gun.js decentralized network.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer" style="justify-content:space-between">
+<div style="display:flex;gap:6px" id="tut-dots">
+<div class="tut-dot active" data-dot="0"></div>
+<div class="tut-dot" data-dot="1"></div>
+<div class="tut-dot" data-dot="2"></div>
+</div>
+<div style="display:flex;gap:8px">
+<button class="btn-ghost" id="tut-prev" style="display:none">Back</button>
+<button class="btn-primary" id="tut-next">Next</button>
+</div>
+</div>
+</div>
+</div>
+
+<div id="modal-confirm" class="modal-overlay" style="display:none">
+<div class="modal sm">
+<div class="modal-header"><h3 id="confirm-title">Confirm</h3></div>
+<div class="modal-body"><p id="confirm-message"></p></div>
+<div class="modal-footer"><button class="btn-ghost" id="confirm-cancel">Cancel</button><button class="btn-danger" id="confirm-ok">Delete</button></div>
+</div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="./endpoints/DDoS.js"></script>
+<script src="./endpoints/Licenses.js"></script>
+<script src="./endpoints/Anticurse.js"></script>
+<script src="./endpoints/Compiler.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js" crossorigin="anonymous"></script>
+<script src="auth.js"></script>
+<script src="editor.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
