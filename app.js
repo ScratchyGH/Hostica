@@ -686,13 +686,19 @@ function openShare(){if(activeProject)shareById(activeProject.id);}
 function getGun(){
 if(window._hosticaGun)return window._hosticaGun;
 try{
+if(!window._gunOptSet){
+window._gunOptSet=true;
+Gun.on('opt',function(ctx){if(ctx.once)return;ctx.opt.localStorage=false;this.to.next(ctx);});
+}
 window._hosticaGun=Gun({
 peers:['wss://relay.peer.ooo/gun'],
 localStorage:false,
-radisk:false
+radisk:false,
+store:{put:function(k,v,cb){if(cb)cb();},get:function(k,cb){if(cb)cb(null);}},
+multicast:false
 });
 }catch(e){
-window._hosticaGun=Gun({localStorage:false,radisk:false});
+window._hosticaGun={get:()=>({get:()=>({put:()=>{},once:()=>{},on:()=>{}})})};
 }
 return window._hosticaGun;
 }
