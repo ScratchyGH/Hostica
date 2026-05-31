@@ -210,7 +210,7 @@ document.getElementById('dashboard-greeting').textContent=g+(u?', '+u.username[0
 async function loadProjects(){
 const rows=await db.projects.orderBy('updatedAt').reverse().toArray();
 projects=rows;
-renderProjects();updateStats();
+renderProjects();setTimeout(updateStats,0);
 }
 
 function renderProjects(q=''){
@@ -261,11 +261,13 @@ toast('Deleted');await loadProjects();
 
 async function updateStats(){
 const fc=await db.files.count();
-const allFiles=await db.files.toArray();
-const bytes=allFiles.reduce((a,f)=>(a+(f.content||'').length),0);
 document.getElementById('stat-projects').textContent=projects.length;
 document.getElementById('stat-files').textContent=fc;
+document.getElementById('stat-size').textContent='...';
+db.files.toArray().then(allFiles=>{
+const bytes=allFiles.reduce((a,f)=>(a+(f.content||'').length),0);
 document.getElementById('stat-size').textContent=fmtBytes(bytes);
+}).catch(()=>{});
 }
 function fmtBytes(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}
 
@@ -293,6 +295,15 @@ return html.replace('</body>',SW_TAG+'\n</body>');
 }
 
 async function getFullProject(id){
+if(activeProject&&activeProject.id===id){
+const allLoaded=Object.values(activeProject.files).every(f=>f._contentLoaded);
+if(allLoaded)return activeProject;
+const unloaded=Object.values(activeProject.files).filter(f=>!f._contentLoaded);
+if(unloaded.length>0){
+await Promise.all(unloaded.map(f=>ensureFileContent(f)));
+}
+return activeProject;
+}
 const proj=await db.projects.get(id);
 const files=await db.files.where('projectId').equals(id).toArray();
 return{...proj,files:Object.fromEntries(files.map(f=>[f.name,f]))};
@@ -333,16 +344,15 @@ name:f.name,
 projectId:f.projectId,
 locked:f.locked||false,
 updatedAt:f.updatedAt,
-content:f.content,
-_contentLoaded:true
+_contentLoaded:f.content!==undefined&&f.content!==null,
+content:f.content
 };
 }
 activeProject={...proj,files};
 document.getElementById('nav-editor').style.display='flex';
 showView('editor');
 renderFileTree();
-const firstName='index.html';
-const first=files[firstName]||Object.values(files).find(f=>!f.locked)||Object.values(files)[0];
+const first=files['index.html']||Object.values(files).find(f=>!f.locked)||Object.values(files)[0];
 if(first)openFile(first);
 }
 
@@ -676,9 +686,13 @@ function openShare(){if(activeProject)shareById(activeProject.id);}
 function getGun(){
 if(window._hosticaGun)return window._hosticaGun;
 try{
-window._hosticaGun=Gun(['https://gun.eco/gun','https://relay.peer.ooo/gun']);
+window._hosticaGun=Gun({
+peers:['wss://relay.peer.ooo/gun'],
+localStorage:false,
+radisk:false
+});
 }catch(e){
-window._hosticaGun=Gun();
+window._hosticaGun=Gun({localStorage:false,radisk:false});
 }
 return window._hosticaGun;
 }
