@@ -4,12 +4,17 @@ let cm=null,proj=null,file=null,saveTimer=null,undos=[],redos=[],lastSaved='',on
 function init(onSaveCb){
 onSave=onSaveCb;
 if(ready)return;
-ready=true; 
+ready=true;
 cm=CodeMirror(document.getElementById('cm-wrapper'),{
 mode:'htmlmixed',theme:'material-darker',lineNumbers:true,lineWrapping:false,
 autoCloseTags:true,matchBrackets:true,tabSize:2,indentWithTabs:false,
-extraKeys:{'Ctrl-Z':()=>undo(),'Ctrl-Y':()=>redo(),'Cmd-Z':()=>undo(),'Cmd-Shift-Z':()=>redo(),
-'Ctrl-S':(c)=>{save();return false;},'Cmd-S':(c)=>{save();return false;}}
+viewportMargin:50,
+extraKeys:{
+'Ctrl-Z':()=>undo(),'Ctrl-Y':()=>redo(),
+'Cmd-Z':()=>undo(),'Cmd-Shift-Z':()=>redo(),
+'Ctrl-S':(c)=>{save();return false;},
+'Cmd-S':(c)=>{save();return false;}
+}
 });
 cm.on('change',(c,ch)=>{
 if(ch.origin==='setValue')return;
@@ -20,11 +25,22 @@ document.getElementById('btn-redo').addEventListener('click',redo);
 }
 function load(p,f){
 proj=p;file=f;undos=[];redos=[];lastSaved=f.content||'';
-cm.setOption('mode',modeFor(f.name));
-cm.setValue(f.content||'');
+const content=f.content||'';
+const mode=modeFor(f.name);
+cm.setOption('mode',mode);
+if(content.length>300000){
+cm.setOption('lineNumbers',false);
+cm.setOption('matchBrackets',false);
+}else{
+cm.setOption('lineNumbers',true);
+cm.setOption('matchBrackets',true);
+}
+cm.setValue(content);
 cm.clearHistory();
+cm.scrollTo(0,0);
 if(Object.keys(savedSettings).length)apply(savedSettings);
-cm.focus();badge('saved');
+requestAnimationFrame(()=>{cm.refresh();cm.focus();});
+badge('saved');
 document.getElementById('editor-project-name').textContent=p.name;
 document.getElementById('editor-file-name').textContent=f.name;
 }
@@ -52,16 +68,13 @@ coffee:'coffeescript',
 svelte:'htmlmixed',
 sh:'shell',bash:'shell',
 yaml:'yaml',yml:'yaml',
-toml:'toml',
 kt:'text/x-kotlin',
-swift:'swift',
-r:'r',
 };
 return map[ext]||'htmlmixed';
 }
 function pushUndo(v){
 if(undos.length&&undos[undos.length-1]===v)return;
-undos.push(v);if(undos.length>200)undos.shift();redos=[];
+undos.push(v);if(undos.length>100)undos.shift();redos=[];
 }
 function undo(){
 if(undos.length<2)return;
@@ -72,8 +85,12 @@ function redo(){
 if(!redos.length)return;
 const n=redos.pop();undos.push(n);set(n);schedule();
 }
-function set(v){const c=cm.getCursor();cm.setValue(v);cm.setCursor(c);}
-function schedule(){clearTimeout(saveTimer);saveTimer=setTimeout(save,1200);}
+function set(v){
+const c=cm.getCursor();
+cm.setValue(v);
+try{cm.setCursor(c);}catch(e){}
+}
+function schedule(){clearTimeout(saveTimer);saveTimer=setTimeout(save,1400);}
 async function save(){
 if(!proj||!file)return;
 const v=cm.getValue();
@@ -83,6 +100,7 @@ await onSave(proj,file);badge('saved');
 }
 function badge(s){
 const b=document.getElementById('autosave-badge');
+if(!b)return;
 b.className='badge';
 if(s==='saved'){b.classList.add('badge-saved');b.textContent='Saved';}
 else{b.classList.add('badge-saving');b.textContent='Saving…';}
