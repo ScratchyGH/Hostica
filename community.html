@@ -4,8 +4,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Community — Hostica</title>
 <link rel="stylesheet" href="style.css"/>
-<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gun/lib/yson.js"></script>
 <style>
 .comm-layout{display:flex;height:100vh;overflow:hidden}
 .comm-sidebar{width:240px;min-width:240px;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow-y:auto;flex-shrink:0}
@@ -144,6 +142,8 @@ Back to editor
 </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gun/lib/yson.js"></script>
 <script src="./endpoints/DDoS.js"></script>
 <script src="./endpoints/Licenses.js"></script>
 <script src="./endpoints/Search.js"></script>
@@ -167,7 +167,8 @@ let filterLang=null;
 let filterType='all';
 let searchQ='';
 
-const gun=Gun({peers:['wss://relay.peer.ooo/gun'],localStorage:false,radisk:false});
+Gun.on('opt',function(ctx){if(ctx.once)return;ctx.opt.localStorage=false;this.to.next(ctx);});
+const gun=Gun({peers:['wss://relay.peer.ooo/gun'],localStorage:false,radisk:false,store:{put:function(k,v,cb){cb&&cb();},get:function(k,cb){cb&&cb(null);}},multicast:false});
 
 function loadRepos(){
 document.getElementById('comm-loading').style.display='flex';
