@@ -4,7 +4,7 @@ let cm=null,proj=null,file=null,saveTimer=null,undos=[],redos=[],lastSaved='',on
 function init(onSaveCb){
 onSave=onSaveCb;
 if(ready)return;
-ready=true;
+ready=true; 
 cm=CodeMirror(document.getElementById('cm-wrapper'),{
 mode:'htmlmixed',theme:'material-darker',lineNumbers:true,lineWrapping:false,
 autoCloseTags:true,matchBrackets:true,tabSize:2,indentWithTabs:false,
