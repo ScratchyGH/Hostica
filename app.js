@@ -133,6 +133,7 @@ catch(e){document.getElementById('setup-2fa-error').textContent=e.message;}
 async function boot(user){
 db=new Dexie('hostica_'+user.username);
 db.version(1).stores({projects:'id,name,updatedAt',files:'[projectId+name],projectId,name,updatedAt'});
+db.version(2).stores({projects:'id,name,updatedAt,visibility',files:'[projectId+name],projectId,name,updatedAt'}).upgrade(tx=>{return tx.table('files').toCollection().modify(f=>{if(f.content===undefined)f.content='';});});
 Editor.init(saveFile);
 if(user.settings)Editor.apply(user.settings);
 document.getElementById('user-display-name').textContent=(user.settings&&user.settings.displayName)||user.username;
@@ -297,12 +298,51 @@ const files=await db.files.where('projectId').equals(id).toArray();
 return{...proj,files:Object.fromEntries(files.map(f=>[f.name,f]))};
 }
 
+async function getProjectMeta(id){
+const proj=await db.projects.get(id);
+const files=await db.files.where('projectId').equals(id).toArray();
+const meta={};
+for(const f of files){
+meta[f.name]={name:f.name,projectId:f.projectId,locked:f.locked||false,updatedAt:f.updatedAt,_contentLoaded:f.content!==undefined,content:f.content};
+}
+return{...proj,files:meta};
+}
+
+async function ensureFileContent(file){
+if(file._contentLoaded||file.content!==undefined)return file;
+const rows=await db.files.where('[projectId+name]').equals([file.projectId,file.name]).toArray();
+if(rows[0]){
+file.content=rows[0].content;
+file._contentLoaded=true;
+if(activeProject&&activeProject.files[file.name]){
+activeProject.files[file.name].content=rows[0].content;
+activeProject.files[file.name]._contentLoaded=true;
+}
+}
+return file;
+}
+
 async function openProject(id){
-const proj=await getFullProject(id);
-activeProject=proj;
+const proj=await db.projects.get(id);
+if(!proj)return;
+const fileRows=await db.files.where('projectId').equals(id).toArray();
+const files={};
+for(const f of fileRows){
+files[f.name]={
+name:f.name,
+projectId:f.projectId,
+locked:f.locked||false,
+updatedAt:f.updatedAt,
+content:f.content,
+_contentLoaded:true
+};
+}
+activeProject={...proj,files};
 document.getElementById('nav-editor').style.display='flex';
-showView('editor');renderFileTree();
-const first=proj.files['index.html']||Object.values(proj.files).find(f=>!f.locked)||Object.values(proj.files)[0];
+showView('editor');
+renderFileTree();
+const firstName='index.html';
+const first=files[firstName]||Object.values(files).find(f=>!f.locked)||Object.values(files)[0];
 if(first)openFile(first);
 }
 
@@ -330,20 +370,24 @@ if(/\.js$/.test(n))return`<svg class="file-icon" width="13" height="13" viewBox=
 return`<svg class="file-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 }
 
-function openFile(f){
+async function openFile(f){
+await ensureFileContent(f);
 activeFile=f;
-Editor.load(activeProject,f);
 document.querySelectorAll('#file-tree li').forEach(li=>li.classList.toggle('active',li.dataset.file===f.name));
+Editor.load(activeProject,f);
 if(document.getElementById('preview-panel').style.display!=='none')refreshPreview();
 }
 
 async function saveFile(proj,file){
 try{
-await db.files.where('[projectId+name]').equals([proj.id,file.name]).modify({content:file.content,updatedAt:file.updatedAt});
-await db.projects.update(proj.id,{updatedAt:Date.now()});
+const now=Date.now();
+await db.files.where('[projectId+name]').equals([proj.id,file.name]).modify({content:file.content,updatedAt:now});
+await db.projects.update(proj.id,{updatedAt:now});
+file.updatedAt=now;
+file._contentLoaded=true;
 if(activeProject)activeProject.files[file.name]=file;
 if(document.getElementById('preview-panel').style.display!=='none')refreshPreview();
-}catch(e){console.error('save fail',e);}
+}catch(e){}
 }
 
 async function createFile(){
@@ -352,7 +396,7 @@ let name=el.value.trim();
 if(!name){el.focus();return;}
 if(!name.includes('.'))name+='.html';
 if(activeProject.files[name]){toast('Already exists','error');return;}
-const f={projectId:activeProject.id,name,content:defaultContent(name),updatedAt:Date.now(),locked:false};
+const f={projectId:activeProject.id,name,content:defaultContent(name),updatedAt:Date.now(),locked:false,_contentLoaded:true};
 await db.files.add(f);
 activeProject.files[name]=f;
 el.value='';closeModal('modal-add-file');
@@ -545,7 +589,7 @@ let added=0;
 for(const file of files){
 if(file.size>MAX_FILE_BYTES){toast(`"${file.name}" exceeds 60 MB`,'error');continue;}
 const text=await readFileAsText(file);
-const rec={projectId:activeProject.id,name:file.name,content:text,updatedAt:Date.now(),locked:false};
+const rec={projectId:activeProject.id,name:file.name,content:text,updatedAt:Date.now(),locked:false,_contentLoaded:true};
 const exists=await db.files.where('[projectId+name]').equals([activeProject.id,file.name]).count();
 if(exists)await db.files.where('[projectId+name]').equals([activeProject.id,file.name]).modify({content:text,updatedAt:Date.now()});
 else await db.files.add(rec);
