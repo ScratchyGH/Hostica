@@ -5,6 +5,7 @@
 <title>Community — Hostica</title>
 <link rel="stylesheet" href="style.css"/>
 <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gun/lib/yson.js"></script>
 <style>
 .comm-layout{display:flex;height:100vh;overflow:hidden}
 .comm-sidebar{width:240px;min-width:240px;background:var(--bg-2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0;overflow-y:auto;flex-shrink:0}
@@ -166,7 +167,7 @@ let filterLang=null;
 let filterType='all';
 let searchQ='';
 
-const gun=Gun(['https://gun.eco/gun','https://relay.peer.ooo/gun']);
+const gun=Gun({peers:['wss://relay.peer.ooo/gun'],localStorage:false,radisk:false});
 
 function loadRepos(){
 document.getElementById('comm-loading').style.display='flex';
